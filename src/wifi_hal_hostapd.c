@@ -2688,7 +2688,8 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
         (wpa_parse_wpa_ie_rsn((const unsigned char *)rsn_ie,
              rsn_ie->length + sizeof(ieee80211_tlv_t), &data) == 0)) {
         for (int i = 0; i < rsn_ie->length; i++) {
-            wifi_hal_dbg_print("%s:%d: MJ RSNE[%d] = 0x%02x\n", __func__, __LINE__, i, rsn_ie[i]);
+            wifi_hal_dbg_print("%s:%d: MJ RSNE[%d] = 0x%02x\n", __func__, __LINE__, i,
+                rsn_ie->value[i]);
         }
         wpa_sm_set_param(sm, WPA_PARAM_PAIRWISE, WPA_CIPHER_CCMP);
         wpa_sm_set_param(sm, WPA_PARAM_GROUP, data.group_cipher);
