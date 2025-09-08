@@ -2683,19 +2683,26 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
     wpa_sm_set_param(sm, WPA_PARAM_PROTO, WPA_PROTO_RSN);
 
     rsn_ie = (ieee80211_tlv_t *)get_ie(backhaul->ie, backhaul->ie_len, WLAN_EID_RSN);
+    wifi_hal_dbg_print("%s:%d: rsn_ie=%p\n", __func__, __LINE__, rsn_ie);
     if (rsn_ie &&
         (wpa_parse_wpa_ie_rsn((const unsigned char *)rsn_ie,
              rsn_ie->length + sizeof(ieee80211_tlv_t), &data) == 0)) {
+        for (int i = 0; i < rsn_ie->length; i++) {
+            wifi_hal_dbg_print("%s:%d: MJ RSNE[%d] = 0x%02x\n", __func__, __LINE__, i, rsn_ie[i]);
+        }
         wpa_sm_set_param(sm, WPA_PARAM_PAIRWISE, WPA_CIPHER_CCMP);
         wpa_sm_set_param(sm, WPA_PARAM_GROUP, data.group_cipher);
 
         if (data.key_mgmt & WPA_KEY_MGMT_NONE) {
+            wifi_hal_dbg_print("%s:%d MJ Entered at data_key_mgmt\n", __func__, __LINE__);
             wpa_sm_set_param(sm, WPA_PARAM_KEY_MGMT, WPA_KEY_MGMT_NONE);
             wpa_sm_set_param(sm, WPA_PARAM_PAIRWISE, WPA_CIPHER_NONE);
             wpa_sm_set_param(sm, WPA_PARAM_GROUP, WPA_CIPHER_NONE);
         } else {
 #if defined(CONFIG_WIFI_EMULATOR)
+wifi_hal_dbg_print("%s:%d MJ Entered at Emulator macro\n", __func__, __LINE__);
             if (sec->mode != wifi_security_mode_none) {
+                wifi_hal_dbg_print("%s:%d MJ Entered at if cond\n", __func__, __LINE__);
                 if (sec->mode == wifi_security_mode_wpa2_personal) {
                     sel = (WPA_KEY_MGMT_PSK | wpa_key_mgmt_11w) & data.key_mgmt;
                 } else if (sec->mode == wifi_security_mode_wpa2_enterprise) {
@@ -2709,10 +2716,11 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
                     sel = (WPA_KEY_MGMT_IEEE8021X_SHA256 | wpa_key_mgmt_11w) & data.key_mgmt;
                 } else if (sec->mode == wifi_security_mode_wpa3_compatibility) {
                     sel = (WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_SAE) & data.key_mgmt;
-                }else if (sec->mode == wifi_security_mode_enhanced_open){
+                } else if (sec->mode == wifi_security_mode_enhanced_open) {
+                    wifi_hal_dbg_print("%s:%d MJ Entered at enhanced_open_cond\n", __func__, __LINE__);
                     sel = (WPA_KEY_MGMT_OWE) & data.key_mgmt;
-                }else {
-                    wifi_hal_error_print("Unsupported security mode : 0x%x\n", sec->mode);
+                } else {
+                    wifi_hal_error_print("%s:%d MJ Unsupported security mode : 0x%x\n", __func__, __LINE__, sec->mode);
                     return;
                 }
             } else
@@ -2764,7 +2772,7 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
             } else if (sec->mode == wifi_security_mode_wpa3_compatibility) {
                 sel = (WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_SAE);
             } else {
-                wifi_hal_error_print("Unsupported security mode : 0x%x\n", sec->mode);
+                wifi_hal_error_print("%s:%d MJ Unsupported security mode : 0x%x\n", __func__, __LINE__, sec->mode);
                 return;
             }
             key_mgmt = pick_akm_suite(sel);
