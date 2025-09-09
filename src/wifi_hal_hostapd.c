@@ -2683,7 +2683,7 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
     wpa_sm_set_param(sm, WPA_PARAM_PROTO, WPA_PROTO_RSN);
 
     rsn_ie = (ieee80211_tlv_t *)get_ie(backhaul->ie, backhaul->ie_len, WLAN_EID_RSN);
-    wifi_hal_dbg_print("%s:%d: rsn_ie=%p\n", __func__, __LINE__, rsn_ie);
+    wifi_hal_dbg_print("%s:%d: rsn_ie=%p rsn_ie->length=%d\n", __func__, __LINE__, rsn_ie, rsn_ie->length);
     if (rsn_ie &&
         (wpa_parse_wpa_ie_rsn((const unsigned char *)rsn_ie,
              rsn_ie->length + sizeof(ieee80211_tlv_t), &data) == 0)) {
