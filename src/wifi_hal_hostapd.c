@@ -2681,9 +2681,14 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
     wpa_sm_set_pmk(sm, pmk, PMK_LEN, NULL, NULL);
     wpa_sm_set_param(sm, WPA_PARAM_RSN_ENABLED, 1);
     wpa_sm_set_param(sm, WPA_PARAM_PROTO, WPA_PROTO_RSN);
-
+    if(backhaul->ie_len){
+    for (int i = 0; i < backhaul->ie_len; i++) {
+    wifi_hal_dbg_print("%s:%d MJ ie:%02X\n ", __func__, __LINE__, backhaul->ie[i]);
+}}else{
+    wifi_hal_dbg_print("%s:%d MJ moved to else", __func__, __LINE__);
+}
     rsn_ie = (ieee80211_tlv_t *)get_ie(backhaul->ie, backhaul->ie_len, WLAN_EID_RSN);
-    wifi_hal_dbg_print("%s:%d: rsn_ie=%p rsn_ie->length=%d\n", __func__, __LINE__, rsn_ie, rsn_ie->length);
+    wifi_hal_dbg_print("%s:%d: rsn_ie=%p\n", __func__, __LINE__, rsn_ie);
     if (rsn_ie &&
         (wpa_parse_wpa_ie_rsn((const unsigned char *)rsn_ie,
              rsn_ie->length + sizeof(ieee80211_tlv_t), &data) == 0)) {
