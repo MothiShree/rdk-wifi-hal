@@ -8972,71 +8972,68 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     security = &vap->u.sta_info.security;
 
 #if defined(CONFIG_WIFI_EMULATOR) || defined(BANANA_PI_PORT)
+wifi_hal_dbg_print("%s:%d: MJ Starting connect (emulator)\n", __func__, __LINE__);
     struct wpa_bss *bss;
     wifi_radio_info_t *radio;
     uint32_t radio_index = 0;
     const u8 *rsnxe;
     u8 rsnxe_capa = 0;
-
-    wifi_hal_dbg_print("MJ %s:%d: Entering emulator/BANANA_PI connect flow\n", __func__, __LINE__);
+    wifi_hal_dbg_print("%s:%d: MJ security mode=%d encr=%d\n",
+        __func__, __LINE__, security->mode, security->encr);
 
     wifi_convert_freq_band_to_radio_index(backhaul->oper_freq_band,
         (int *)&radio_index);
     wifi_ie_info_t *bss_ie = &interface->bss_elem_ie[radio_index];
     wifi_ie_info_t *beacon_ie = &interface->beacon_elem_ie[radio_index];
 
-    wifi_hal_dbg_print("MJ %s:%d: bssid:%s frequency:%d ssid:%s sta radio:%d for vap radio:%d\n",
+    wifi_hal_dbg_print("%s:%d:bssid:%s frequency:%d ssid:%s sta radio:%d for vap radio:%d\n",
         __func__, __LINE__, to_mac_str(backhaul->bssid, bssid_str),
         backhaul->freq, backhaul->ssid, radio_index, vap->radio_index);
 
     if (interface->wpa_s.current_ssid == NULL) {
+         wifi_hal_dbg_print("%s:%d: MJ allocating current_ssid\n", __func__, __LINE__);
         interface->wpa_s.current_ssid = get_wifi_wpa_current_ssid(interface);
-        wifi_hal_dbg_print("MJ %s:%d: current_ssid was NULL, now %p\n",
+        wifi_hal_info_print("%s:%d: point to - wpa_s.current_ssid:[%p]\n",
             __func__, __LINE__, interface->wpa_s.current_ssid);
     }
 
     if ((interface->wpa_s.current_ssid == NULL) || (interface->wpa_s.p2pdev == NULL) ||
         (interface->wpa_s.conf == NULL)) {
-        wifi_hal_error_print("MJ %s:%d: NULL Pointer cur_ssid:%p p2pdev:%p conf:%p\n",
+        wifi_hal_dbg_print("%s:%d: allocating current_bss (len=%u)\n",
+            __func__, __LINE__, bss_ie->buff_len);
+        wifi_hal_error_print("%s:%d NULL Pointer for wpa_s cur_ssid:%p p2pdev:%p conf:%p\n",
             __func__, __LINE__, interface->wpa_s.current_ssid, interface->wpa_s.p2pdev, interface->wpa_s.conf);
         return -1;
     }
-
     if (interface->wpa_s.current_bss == NULL) {
-        interface->wpa_s.current_bss = (struct wpa_bss *)malloc(sizeof(struct wpa_bss) + bss_ie->buff_len);
+        interface->wpa_s.current_bss = (struct wpa_bss *)malloc(
+                sizeof(struct wpa_bss) + bss_ie->buff_len);
         if (interface->wpa_s.current_bss == NULL) {
-            wifi_hal_error_print("MJ %s:%d: NULL Pointer allocating current_bss\n", __func__, __LINE__);
+            wifi_hal_error_print("%s:%d NULL Pointer\n", __func__, __LINE__);
             return -1;
         }
-        wifi_hal_dbg_print("MJ %s:%d: allocated current_bss %p\n", __func__, __LINE__, interface->wpa_s.current_bss);
     }
-
-    /* Fill in current bss struct where we are going to connect. */
+    // Fill in current bss struct where we are going to connect.
     memset(interface->wpa_s.current_bss, 0, sizeof(struct wpa_bss) + bss_ie->buff_len);
     strcpy(interface->wpa_s.current_bss->ssid, backhaul->ssid);
     interface->wpa_s.current_bss->ssid_len = strlen(backhaul->ssid);
     memcpy(interface->wpa_s.current_bss->bssid, backhaul->bssid, ETH_ALEN);
     memcpy(interface->wpa_s.current_ssid->bssid, backhaul->bssid, ETH_ALEN);
-
-    /* Cipher mapping from your security settings */
     if (security->encr == wifi_encryption_aes) {
         interface->wpa_s.current_ssid->pairwise_cipher = WPA_CIPHER_CCMP;
         interface->wpa_s.current_ssid->group_cipher = WPA_CIPHER_CCMP;
-        wifi_hal_dbg_print("MJ %s:%d: Encryption: AES -> CCMP\n", __func__, __LINE__);
     } else if (security->encr == wifi_encryption_tkip) {
         interface->wpa_s.current_ssid->pairwise_cipher = WPA_CIPHER_TKIP;
         interface->wpa_s.current_ssid->group_cipher = WPA_CIPHER_TKIP;
-        wifi_hal_dbg_print("MJ %s:%d: Encryption: TKIP -> TKIP\n", __func__, __LINE__);
     } else if (security->encr == wifi_encryption_aes_tkip) {
         interface->wpa_s.current_ssid->pairwise_cipher = WPA_CIPHER_TKIP;
         interface->wpa_s.current_ssid->group_cipher = WPA_CIPHER_CCMP;
-        wifi_hal_dbg_print("MJ %s:%d: Encryption: AES+TKIP -> TKIP/CCMP\n", __func__, __LINE__);
     } else if (security->encr == wifi_encryption_none) {
         interface->wpa_s.current_ssid->pairwise_cipher = WPA_CIPHER_NONE;
         interface->wpa_s.current_ssid->group_cipher = WPA_CIPHER_NONE;
-        wifi_hal_dbg_print("MJ %s:%d: Encryption: NONE -> OPEN\n", __func__, __LINE__);
     } else {
-        wifi_hal_info_print("MJ %s:%d: Invalid encryption mode:%d in wifi_hal_connect\n", __func__, __LINE__, security->encr);
+        wifi_hal_info_print("%s:%d:Invalid encryption mode:%d in wifi_hal_connect\n", __func__,
+            __LINE__, security->encr);
         return -1;
     }
 
@@ -9046,34 +9043,36 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     interface->wpa_s.current_ssid->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
 
     interface->wpa_s.current_ssid->key_mgmt = interface->u.sta.wpa_sm->key_mgmt;
-
+    wifi_hal_dbg_print("%s:%d: MJ pairwise_cipher=%d group_cipher=%d\n",
+        __func__, __LINE__,
+        interface->wpa_s.current_ssid->pairwise_cipher,
+        interface->wpa_s.current_ssid->group_cipher);
     if ((security->mode == wifi_security_mode_wpa3_personal) ||
         (security->mode == wifi_security_mode_wpa3_transition) ||
         (security->mode == wifi_security_mode_wpa3_enterprise)) {
+        wifi_hal_dbg_print("%s:%d: WPA3 mode, enabling MFP, SAE groups setup\n",
+            __func__, __LINE__);
         interface->wpa_s.current_ssid->ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
-        wifi_hal_dbg_print("MJ %s:%d: WPA3 mode detected, MFP required\n", __func__, __LINE__);
-
         if (interface->wpa_s.conf->sae_groups == NULL) {
             interface->wpa_s.conf->sae_groups =
                 os_malloc(sizeof(*interface->wpa_s.conf->sae_groups) * MAX_SAE_GROUP);
             if (interface->wpa_s.conf->sae_groups == NULL) {
-                wifi_hal_error_print("MJ %s:%d: NULL pointer allocating sae_groups\n", __func__, __LINE__);
+                wifi_hal_error_print("%s:%d: NULL pointer\n", __func__, __LINE__);
                 free(interface->wpa_s.current_bss);
                 interface->wpa_s.current_bss = NULL;
                 return -1;
             }
-            wifi_hal_dbg_print("MJ %s:%d: allocated sae_groups\n", __func__, __LINE__);
         }
-        interface->wpa_s.conf->sae_groups[0] = 19;
-        interface->wpa_s.conf->sae_groups[1] = 20;
-        interface->wpa_s.conf->sae_groups[2] = 21;
-        interface->wpa_s.conf->sae_groups[3] = -1;
-    }
 
+	interface->wpa_s.conf->sae_groups[0] = 19;
+	interface->wpa_s.conf->sae_groups[1] = 20;
+	interface->wpa_s.conf->sae_groups[2] = 21;
+	interface->wpa_s.conf->sae_groups[3] = -1;
+    }
     if (interface->wpa_s.current_ssid->ssid == NULL) {
         interface->wpa_s.current_ssid->ssid = malloc(strlen(backhaul->ssid) + 1);
         if (interface->wpa_s.current_ssid->ssid == NULL) {
-            wifi_hal_error_print("MJ %s:%d: NULL pointer allocating current_ssid->ssid\n", __func__, __LINE__);
+            wifi_hal_error_print("%s:%d: NULL pointer\n", __func__, __LINE__);
             free(interface->wpa_s.current_bss);
             interface->wpa_s.current_bss = NULL;
             if (interface->wpa_s.conf->sae_groups) {
@@ -9082,17 +9081,16 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
             }
             return -1;
         }
-        wifi_hal_dbg_print("MJ %s:%d: allocated current_ssid->ssid\n", __func__, __LINE__);
     }
 
-    if ((security->mode == wifi_security_mode_wpa3_personal) ||
+    if ( (security->mode == wifi_security_mode_wpa3_personal) ||
         (security->mode == wifi_security_mode_wpa3_compatibility) ||
         (security->mode == wifi_security_mode_wpa3_transition)) {
         if (interface->wpa_s.current_ssid->sae_password == NULL) {
             interface->wpa_s.current_ssid->sae_password = malloc(MAX_PWD_LEN);
         }
         if (interface->wpa_s.current_ssid->sae_password == NULL) {
-            wifi_hal_error_print("MJ %s:%d: NULL pointer allocating sae_password\n", __func__, __LINE__);
+            wifi_hal_error_print("%s:%d: NULL pointer\n", __func__, __LINE__);
             free(interface->wpa_s.current_ssid->ssid);
             interface->wpa_s.current_ssid->ssid = NULL;
             free(interface->wpa_s.current_bss);
@@ -9102,14 +9100,13 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         memset(interface->wpa_s.current_ssid->sae_password, 0, MAX_PWD_LEN);
         strncpy(interface->wpa_s.current_ssid->sae_password, security->u.key.key,
             MAX_PWD_LEN-1);
-        wifi_hal_dbg_print("MJ %s:%d: SAE password set\n", __func__, __LINE__);
     } else if ((security->mode != wifi_security_mode_wpa2_enterprise) &&
-               (security->mode != wifi_security_mode_wpa3_enterprise)) {
+        (security->mode != wifi_security_mode_wpa3_enterprise)) {
         if (interface->wpa_s.current_ssid->passphrase == NULL) {
             interface->wpa_s.current_ssid->passphrase = malloc(MAX_PWD_LEN);
         }
         if (interface->wpa_s.current_ssid->passphrase == NULL) {
-            wifi_hal_error_print("MJ %s:%d: NULL pointer allocating passphrase\n", __func__, __LINE__);
+            wifi_hal_error_print("%s:%d: NULL pointer\n", __func__, __LINE__);
             free(interface->wpa_s.current_ssid->ssid);
             free(interface->wpa_s.current_bss);
             return -1;
@@ -9119,7 +9116,14 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         memset(interface->wpa_s.current_ssid->passphrase, 0, MAX_PWD_LEN);
         strncpy(interface->wpa_s.current_ssid->passphrase, security->u.key.key,
             MAX_PWD_LEN-1);
-        wifi_hal_dbg_print("MJ %s:%d: passphrase set\n", __func__, __LINE__);
+    }
+     if (interface->wpa_s.current_ssid->sae_password) {
+        wifi_hal_dbg_print("%s:%d: MJ SAE password set (len=%zu)\n",
+            __func__, __LINE__, strlen(interface->wpa_s.current_ssid->sae_password));
+    }
+    if (interface->wpa_s.current_ssid->passphrase) {
+        wifi_hal_dbg_print("%s:%d: MJ passphrase set (len=%zu)\n",
+            __func__, __LINE__, strlen(interface->wpa_s.current_ssid->passphrase));
     }
 
     if (security->mode != wifi_security_mode_wpa3_personal) {
@@ -9129,28 +9133,24 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     memset(interface->wpa_s.current_ssid->ssid, 0, (strlen(backhaul->ssid) + 1));
     strcpy(interface->wpa_s.current_ssid->ssid, backhaul->ssid);
     if ((security->mode != wifi_security_mode_wpa2_personal) &&
-        (security->mode != wifi_security_mode_wpa3_compatibility)) {
+            (security->mode != wifi_security_mode_wpa3_compatibility)) {
         interface->wpa_s.current_ssid->ssid_len = strlen(backhaul->ssid);
     }
-
     interface->wpa_s.current_bss->freq = backhaul->freq;
     interface->wpa_s.current_bss->ie_len = bss_ie->buff_len;
     interface->wpa_s.current_bss->beacon_ie_len = beacon_ie->buff_len;
     interface->wpa_s.drv_priv = interface;
-
 #ifdef CONFIG_WIFI_EMULATOR
     radio = get_radio_by_phy_index(interface->phy_index);
 #else
     radio = get_radio_by_rdk_index(vap->radio_index);
 #endif
-
     interface->wpa_s.hw.modes = radio->hw_modes;
     interface->wpa_s.hw.num_modes = NUM_NL80211_BANDS;
     memcpy(interface->wpa_s.own_addr, vap->u.sta_info.mac, ETH_ALEN);
-
     struct wpa_bss *curr_bss = (struct wpa_bss *)malloc(sizeof(struct wpa_bss) + bss_ie->buff_len);
     if (curr_bss == NULL) {
-        wifi_hal_error_print("MJ %s:%d: NULL pointer allocating curr_bss\n", __func__, __LINE__);
+        wifi_hal_error_print("%s:%d: NULL pointer\n", __func__, __LINE__);
         free(interface->wpa_s.current_ssid->ssid);
         free(interface->wpa_s.current_bss);
         if (interface->wpa_s.current_ssid->sae_password)
@@ -9159,8 +9159,6 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
             free(interface->wpa_s.current_ssid->passphrase);
         return -1;
     }
-    wifi_hal_dbg_print("MJ %s:%d: allocated curr_bss %p\n", __func__, __LINE__, curr_bss);
-
     memset(curr_bss, 0, sizeof(struct wpa_bss) + bss_ie->buff_len);
     strcpy(curr_bss->ssid, backhaul->ssid);
     curr_bss->ssid_len = strlen(backhaul->ssid);
@@ -9168,18 +9166,27 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     curr_bss->freq = backhaul->freq;
     curr_bss->ie_len = bss_ie->buff_len;
     curr_bss->beacon_ie_len = beacon_ie->buff_len;
-
     if (bss_ie->buff != NULL) {
         memcpy(curr_bss + 1, bss_ie->buff, bss_ie->buff_len);
         rsnxe = get_ie(bss_ie->buff, bss_ie->buff_len, WLAN_EID_RSNX);
         if (rsnxe && rsnxe[1] >= 1)
-            rsnxe_capa = rsnxe[2];
+            rsnxe_capa = rsnxe[2]; 
     }
+    wifi_hal_dbg_print("%s:%d: MJ current_ssid->ssid=%s len=%d\n",
+        __func__, __LINE__,
+        interface->wpa_s.current_ssid->ssid,
+        interface->wpa_s.current_ssid->ssid_len);
+
+    wifi_hal_dbg_print("%s:%d: MJ current_bss->freq=%d ie_len=%u beacon_ie_len=%u\n",
+        __func__, __LINE__,
+        interface->wpa_s.current_bss->freq,
+        interface->wpa_s.current_bss->ie_len,
+        interface->wpa_s.current_bss->beacon_ie_len);
 
     if (rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E) ||
         radio->oper_param.band == WIFI_FREQUENCY_6_BAND) {
+        wifi_hal_dbg_print("%s:%d: MJ RSNX H2E capability detected\n", __func__, __LINE__);
         interface->wpa_s.conf->sae_pwe = 1;
-        wifi_hal_dbg_print("MJ %s:%d: RSNX H2E or 6GHz band detected, SAE_PWE enabled\n", __func__, __LINE__);
 
         interface->wpa_s.current_ssid->pt = sae_derive_pt(interface->wpa_s.conf->sae_groups,
             interface->wpa_s.current_ssid->ssid,
@@ -9194,47 +9201,37 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
 #else
     interface->wpa_s.driver = &g_wpa_driver_nl80211_ops;
 #endif
-
     memcpy(interface->wpa_s.conf->ssid, interface->wpa_s.current_ssid, sizeof(struct wpa_ssid));
     memcpy(interface->wpa_s.bssid, backhaul->bssid, ETH_ALEN);
-
     dl_list_add(&interface->wpa_s.bss, &interface->wpa_s.current_bss->list);
 
     bss = wpa_bss_get_bssid_latest(&interface->wpa_s, backhaul->bssid);
-    if (bss) {
+    if (bss) { 
         memcpy(bss + 1, bss_ie->buff, bss_ie->buff_len);
     }
 
     wpa_hexdump(MSG_MSGDUMP, "CONN_BSS_IE", bss_ie->buff, bss_ie->buff_len);
-
-    wifi_hal_dbg_print("MJ %s:%d: sending authentication to BSSID:%s SSID:%s\n",
-        __func__, __LINE__, to_mac_str(backhaul->bssid, bssid_str), backhaul->ssid);
-
+    wifi_hal_dbg_print("%s:%d: MJ Calling sme_send_authentication()\n", __func__, __LINE__);
     sme_send_authentication(&interface->wpa_s, curr_bss, interface->wpa_s.current_ssid, 1);
+    wifi_hal_dbg_print("%s:%d: MJ Connect done (emulator)\n", __func__, __LINE__);
     return 0;
-
-#else /* !CONFIG_WIFI_EMULATOR && !BANANA_PI_PORT */
-
-    wifi_hal_dbg_print("MJ %s:%d: Entering non-emulator connect flow\n", __func__, __LINE__);
-
+#else
     if (interface->u.sta.pending_rx_eapol) {
-        wifi_hal_dbg_print("MJ %s:%d: clearing pending_rx_eapol flag\n", __func__, __LINE__);
         interface->u.sta.pending_rx_eapol = false;
     }
-
-    /* EAPOL states should be initialised before sending CMD_CONNECT */
+    // EAPOL states should be initialised before sending CMD_CONNECT
     update_wpa_sm_params(interface);
     update_eapol_sm_params(interface);
     eapol_sm_notify_portEnabled(interface->u.sta.wpa_sm->eapol, FALSE);
     eapol_sm_notify_portValid(interface->u.sta.wpa_sm->eapol, FALSE);
 
     if ((msg = nl80211_drv_cmd_msg(g_wifi_hal.nl80211_id, interface, 0, NL80211_CMD_CONNECT)) == NULL) {
-        wifi_hal_error_print("MJ %s:%d: nl80211_drv_cmd_msg failed\n", __func__, __LINE__);
         return -1;
     }
 
-    wifi_hal_dbg_print("MJ %s:%d: bssid:%s frequency:%d ssid:%s\n", __func__, __LINE__,
-        to_mac_str(backhaul->bssid, bssid_str), backhaul->freq, backhaul->ssid);
+
+    wifi_hal_dbg_print("%s:%d:bssid:%s frequency:%d ssid:%s\n", __func__, __LINE__,
+            to_mac_str(backhaul->bssid, bssid_str), backhaul->freq, backhaul->ssid);
 
     nla_put(msg, NL80211_ATTR_SSID, strlen(backhaul->ssid), backhaul->ssid);
     nla_put(msg, NL80211_ATTR_MAC, sizeof(backhaul->bssid), backhaul->bssid);
@@ -9245,10 +9242,9 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     bh_rsn = (ieee80211_tlv_t *)get_ie(backhaul->ie, backhaul->ie_len, WLAN_EID_RSN);
     if (bh_rsn &&
         (wpa_parse_wpa_ie_rsn((const u8 *)bh_rsn, bh_rsn->length + sizeof(ieee80211_tlv_t),
-                              &data) == 0)) {
+             &data) == 0)) {
         wpa_conf.wpa_group = data.group_cipher;
         wpa_conf.rsn_pairwise = WPA_CIPHER_CCMP;
-
         if (data.key_mgmt & WPA_KEY_MGMT_NONE) {
             wpa_conf.wpa_key_mgmt = WPA_KEY_MGMT_NONE;
         } else {
@@ -9256,21 +9252,20 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
             key_mgmt = pick_akm_suite(sel);
 
             if (key_mgmt == -1) {
-                wifi_hal_error_print("MJ %s:%d: Unsupported AKM suite: 0x%x\n", __func__, __LINE__, data.key_mgmt);
+                wifi_hal_error_print("Unsupported AKM suite: 0x%x\n", data.key_mgmt);
                 return -1;
             }
 
             wpa_conf.wpa_key_mgmt = key_mgmt;
         }
 
-        wifi_hal_dbg_print("MJ %s:%d: Parsed RSN group:%x pairwise:%x keymgmt:%x\n",
-            __func__, __LINE__, data.group_cipher, data.pairwise_cipher, key_mgmt);
+        wifi_hal_dbg_print("%s:%d: %x %x %x\n", __func__, __LINE__, data.group_cipher,
+            data.pairwise_cipher, key_mgmt);
     } else {
         if (security->mode == wifi_security_mode_none) {
             wpa_conf.wpa_key_mgmt = WPA_KEY_MGMT_NONE;
             wpa_conf.wpa_group = WPA_CIPHER_NONE;
             wpa_conf.rsn_pairwise = WPA_CIPHER_NONE;
-            wifi_hal_dbg_print("MJ %s:%d: Open network - no RSN\n", __func__, __LINE__);
         } else {
             if (security->encr == wifi_encryption_aes) {
                 wpa_conf.wpa_group = WPA_CIPHER_CCMP;
@@ -9282,7 +9277,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
                 wpa_conf.wpa_group = WPA_CIPHER_TKIP;
                 wpa_conf.rsn_pairwise = WPA_CIPHER_CCMP;
             } else {
-                wifi_hal_info_print("MJ %s:%d: Invalid encryption mode:%d in wifi_hal_connect\n", __func__, __LINE__, security->encr);
+                wifi_hal_info_print("%s:%d:Invalid encryption mode:%d in wifi_hal_connect\n", __func__, __LINE__, security->encr);
             }
 
             switch (security->mode) {
@@ -9297,25 +9292,21 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
                 case wifi_security_mode_wpa_wpa2_enterprise:
                     wpa_conf.wpa_key_mgmt = WPA_KEY_MGMT_IEEE8021X;
                     break;
-
                 case wifi_security_mode_wpa3_personal:
                 case wifi_security_mode_wpa3_enterprise:
                     wpa_conf.wpa_key_mgmt = WPA_KEY_MGMT_SAE;
                     break;
-
                 case wifi_security_mode_wpa3_transition:
                     wpa_conf.wpa_key_mgmt = WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_SAE;
                     break;
-
-                case wifi_security_mode_wpa3_compatibility:
+                    case wifi_security_mode_wpa3_compatibility:
                     wpa_conf.wpa_key_mgmt = WPA_KEY_MGMT_PSK;
 #if HOSTAPD_VERSION >= 210
                     wpa_conf.wpa_key_mgmt_rsno = WPA_KEY_MGMT_SAE;
 #endif /* HOSTAPD_VERSION >= 210 */
                     break;
-
                 default:
-                    wifi_hal_info_print("MJ %s:%d: Invalid security mode: %d in wifi_hal_connect\r\n", __func__, __LINE__, security->mode);
+                    wifi_hal_info_print("%s:%d:Invalid security mode: %d in wifi_hal_connect\r\n", __func__, __LINE__, security->mode);
                     wpa_conf.wpa_key_mgmt = -1;
                     break;
             }
@@ -9326,9 +9317,10 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
 
     if (security->mode != wifi_security_mode_none) {
         if ((ret = wpa_write_rsn_ie(&wpa_conf, pos, rsn_ie + sizeof(rsn_ie) - pos, NULL)) < 0) {
-            wifi_hal_error_print("MJ %s:%d: Failed to build RSN %d\r\n", __func__, __LINE__, ret);
+            wifi_hal_error_print("%s:%d Failed to build RSN %d\r\n", __func__, __LINE__, ret);
             return ret;
-        } else {
+        }
+        else {
             pos += ret;
 #if HOSTAPD_VERSION >= 210
             if (interface->u.sta.wpa_sm->assoc_rsnxe_len > 0 &&
@@ -9339,14 +9331,12 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
             }
 #endif
             nla_put(msg, NL80211_ATTR_IE, pos - rsn_ie, rsn_ie);
-            wifi_hal_dbg_print("MJ %s:%d: Added RSN IE (len=%d)\n", __func__, __LINE__, (int)(pos - rsn_ie));
         }
 
         if (security->mode == wifi_security_mode_wpa2_enterprise || security->mode == wifi_security_mode_wpa2_personal)
             ver |= NL80211_WPA_VERSION_2;
         else
             ver |= NL80211_WPA_VERSION_1;
-
         nla_put_u32(msg, NL80211_ATTR_WPA_VERSIONS, ver);
 
         nla_put_u32(msg, NL80211_ATTR_CIPHER_SUITES_PAIRWISE, RSN_CIPHER_SUITE_CCMP);
@@ -9361,9 +9351,8 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         nla_put_flag(msg, NL80211_ATTR_PRIVACY);
     } else {
         nla_put_u32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM);
-        wifi_hal_dbg_print("MJ %s:%d: security mode open:%d encr:%d\n", __func__, __LINE__, security->mode, security->encr);
+        wifi_hal_dbg_print("security mode open:%d encr:%d\n", security->mode, security->encr);
     }
-
 #ifdef EAPOL_OVER_NL
     if (g_wifi_hal.platform_flags & PLATFORM_FLAGS_CONTROL_PORT_FRAME &&
         interface->bss_nl_connect_event_fd >= 0) {
@@ -9374,15 +9363,14 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
 #ifdef EAPOL_OVER_NL
     }
 #endif
-
     if (ret == 0) {
-        wifi_hal_dbg_print("MJ %s:%d: nl80211 connect send succeeded (ret=%d)\n", __func__, __LINE__, ret);
         return 0;
     }
+#endif /* CONFIG_WIFI_EMULATOR || BANANA_PI_PORT*/
+    wifi_hal_error_print("%s:%d: connect command failed: ret=%d (%s)\n", __func__, __LINE__,
+            ret, strerror(-ret));
 
-    wifi_hal_error_print("MJ %s:%d: connect command failed: ret=%d (%s)\n", __func__, __LINE__, ret, strerror(-ret));
     return -1;
-#endif /* CONFIG_WIFI_EMULATOR || BANANA_PI_PORT */
 }
 
 
