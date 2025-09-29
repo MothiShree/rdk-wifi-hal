@@ -9299,7 +9299,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
              for (int i = 0; i < ret; i++) {
                 wifi_hal_dbg_print("%02x ", *(pos - ret + i));
             }
-            wifi_hal_debug_print("\r\n");
+            wifi_hal_dbg_print("\r\n");
 #if HOSTAPD_VERSION >= 210
             if (interface->u.sta.wpa_sm->assoc_rsnxe_len > 0 &&
                 interface->u.sta.wpa_sm->assoc_rsnxe_len <= (sizeof(rsn_ie) - ret)) {
