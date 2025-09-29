@@ -9294,10 +9294,10 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         }
         else {
             pos += ret;
-            wifi_hal_debug_print("MJ %s:%d RSN IE written, length: %d\r\n", __func__, __LINE__, ret);
-            wifi_hal_debug_print("MJ RSN IE data: ");
+            wifi_hal_dbg_print("MJ %s:%d RSN IE written, length: %d\r\n", __func__, __LINE__, ret);
+            wifi_hal_dbg_print("MJ RSN IE data: ");
              for (int i = 0; i < ret; i++) {
-                wifi_hal_debug_print("%02x ", *(pos - ret + i));
+                wifi_hal_dbg_print("%02x ", *(pos - ret + i));
             }
             wifi_hal_debug_print("\r\n");
 #if HOSTAPD_VERSION >= 210
