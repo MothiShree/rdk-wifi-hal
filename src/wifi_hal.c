@@ -1089,6 +1089,7 @@ INT wifi_hal_connect(INT ap_index, wifi_bss_info_t *bss)
     int best_rssi = -100;
 
     NULL_PTR_ASSERT(bss);
+wifi_hal_error_print("%s:%d: MJ ap_index:%d bss:%p\n", __func__, __LINE__, ap_index, bss);
 
     if ((interface = get_interface_by_vap_index(ap_index)) == NULL) {
         wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, ap_index);
@@ -1104,19 +1105,24 @@ INT wifi_hal_connect(INT ap_index, wifi_bss_info_t *bss)
     backhaul = &interface->u.sta.backhaul;
 
     if ((bss != NULL) && (memcmp(null_mac, bss->bssid, sizeof(bssid_t)) != 0)) {
+                wifi_hal_error_print("%s:%d:MJ debug 1\n", __func__, __LINE__);
         memcpy(backhaul, bss, sizeof(wifi_bss_info_t));
     } else {
         // find from scan list
         pthread_mutex_lock(&interface->scan_info_mutex);
+        wifi_hal_dbg_print("%s:%d: MJ Scanning for best BSS with SSID: %s\n", __func__, __LINE__, vap->u.sta_info.ssid);
         tmp = hash_map_get_first(interface->scan_info_map);
         while (tmp != NULL) {
+                wifi_hal_dbg_print("%s:%d: MJ Checking BSS: SSID=%s, RSSI=%d\n", __func__, __LINE__, tmp->ssid, tmp->rssi);
             if ((strcmp(tmp->ssid, vap->u.sta_info.ssid) == 0) &&
                     (tmp->rssi > best_rssi)) {
+                    wifi_hal_dbg_print("%s:%d: MJ Found better BSS: RSSI=%d (previous best=%d)\n", __func__, __LINE__, tmp->rssi, best_rssi);
                 best_rssi = tmp->rssi;
                 best = tmp;
             }
             tmp = hash_map_get_next(interface->scan_info_map, tmp);
         }
+        wifi_hal_dbg_print("%s:%d: MJ Best BSS selected: %s, RSSI=%d\n", __func__, __LINE__, best ? best->ssid : "None", best_rssi);
 
         if (best == NULL) {
             pthread_mutex_unlock(&interface->scan_info_mutex);

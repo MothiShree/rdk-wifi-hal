@@ -9139,9 +9139,16 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
             free(interface->wpa_s.current_ssid->passphrase);
         return -1;
     }
+        wifi_hal_error_print("%s:%d: MJ point to - curr_bss:[%p]\n", __func__, __LINE__, curr_bss);
     memset(curr_bss, 0, sizeof(struct wpa_bss) + bss_ie->buff_len);
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss:[%p]\n",
+        __func__, __LINE__, curr_bss);
     strcpy(curr_bss->ssid, backhaul->ssid);
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ssid:[%p]\n",
+        __func__, __LINE__, curr_bss->ssid);
     curr_bss->ssid_len = strlen(backhaul->ssid);
+     wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ssid_len:[%d]\n",
+        __func__, __LINE__, curr_bss->ssid_len);
     memcpy(curr_bss->bssid, backhaul->bssid, ETH_ALEN);
     curr_bss->freq = backhaul->freq;
     curr_bss->ie_len = bss_ie->buff_len;
