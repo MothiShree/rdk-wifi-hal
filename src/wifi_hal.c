@@ -1107,6 +1107,8 @@ INT wifi_hal_connect(INT ap_index, wifi_bss_info_t *bss)
     if ((bss != NULL) && (memcmp(null_mac, bss->bssid, sizeof(bssid_t)) != 0)) {
                 wifi_hal_error_print("%s:%d:MJ debug 1\n", __func__, __LINE__);
         memcpy(backhaul, bss, sizeof(wifi_bss_info_t));
+        wifi_hal_error_print("%s:%d: MJ Connecting to BSS: SSID=%s, RSSI=%d\n", __func__, __LINE__, backhaul->ssid, backhaul->rssi);
+                wifi_hal_error_print("%s:%d:MJ debug 2\n", __func__, __LINE__);
     } else {
         // find from scan list
         pthread_mutex_lock(&interface->scan_info_mutex);
@@ -1135,6 +1137,7 @@ INT wifi_hal_connect(INT ap_index, wifi_bss_info_t *bss)
     }
 
     if (nl80211_connect_sta(interface) != 0) {
+        wifi_hal_error_print("%s:%d: MJ Failed to connect to bssid\n", __func__, __LINE__);
         return RETURN_ERR;
     }
 
