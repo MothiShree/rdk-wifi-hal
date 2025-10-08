@@ -1087,10 +1087,10 @@ INT wifi_hal_connect(INT ap_index, wifi_bss_info_t *bss)
     bssid_t null_mac = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     wifi_bss_info_t *backhaul, *tmp = NULL, *best = NULL;
     int best_rssi = -100;
-
+    wifi_hal_error_print("%s:%d: Mothi\n", __func__, __LINE__);
+    wifi_hal_error_print("%s:%d: MJ ap_index:%d bss:%p\n", __func__, __LINE__, ap_index, bss);
     NULL_PTR_ASSERT(bss);
-wifi_hal_error_print("%s:%d: MJ ap_index:%d bss:%p\n", __func__, __LINE__, ap_index, bss);
-
+    wifi_hal_error_print("%s:%d MJ check", __func__, __LINE__);
     if ((interface = get_interface_by_vap_index(ap_index)) == NULL) {
         wifi_hal_error_print("%s:%d:interface for ap index:%d not found\n", __func__, __LINE__, ap_index);
         return RETURN_ERR;
