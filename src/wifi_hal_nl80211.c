@@ -9205,6 +9205,9 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     wifi_hal_error_print("%s:%d: MJ: sae_password = %s\n",
         __func__, __LINE__, sae_pwd ? sae_pwd : "NULL");
 
+    size_t len = interface->wpa_s.current_ssid->sae_password ? os_strlen(interface->wpa_s.current_ssid->sae_password) : 0; 
+    wifi_hal_error_print("%s:%d: MJ: sae_password length = %zu\n",
+        __func__, __LINE__, len);
     interface->wpa_s.current_ssid->pt = sae_derive_pt(
         interface->wpa_s.conf->sae_groups,
         interface->wpa_s.current_ssid->ssid,
