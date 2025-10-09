@@ -9147,15 +9147,27 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ssid:[%p]\n",
         __func__, __LINE__, curr_bss->ssid);
     curr_bss->ssid_len = strlen(backhaul->ssid);
-     wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ssid_len:[%d]\n",
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ssid_len:[%d]\n",
         __func__, __LINE__, curr_bss->ssid_len);
     memcpy(curr_bss->bssid, backhaul->bssid, ETH_ALEN);
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->bssid:[%p]\n",
+        __func__, __LINE__, curr_bss->bssid);
     curr_bss->freq = backhaul->freq;
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->freq:[%d]\n",
+        __func__, __LINE__, curr_bss->freq);
     curr_bss->ie_len = bss_ie->buff_len;
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ie_len:[%d]\n",
+        __func__, __LINE__, curr_bss->ie_len);
     curr_bss->beacon_ie_len = beacon_ie->buff_len;
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->beacon_ie_len:[%d]\n",
+        __func__, __LINE__, curr_bss->beacon_ie_len);
     if (bss_ie->buff != NULL) {
         memcpy(curr_bss + 1, bss_ie->buff, bss_ie->buff_len);
+        wifi_hal_error_print("%s:%d: MJ point to - curr_bss->ie:[%p]\n",
+            __func__, __LINE__, curr_bss + 1);
         rsnxe = get_ie(bss_ie->buff, bss_ie->buff_len, WLAN_EID_RSNX);
+        wifi_hal_error_print("%s:%d: MJ point to - rsnxe:[%p]\n",
+            __func__, __LINE__, rsnxe);
         if (rsnxe && rsnxe[1] >= 1)
             rsnxe_capa = rsnxe[2]; 
     }
@@ -9163,32 +9175,45 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     if (rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E) ||
         radio->oper_param.band == WIFI_FREQUENCY_6_BAND) {
         interface->wpa_s.conf->sae_pwe = 1;
-
+        wifi_hal_error_print("%s:%d: MJ SAE H2E is enabled\n", __func__, __LINE__);
         interface->wpa_s.current_ssid->pt = sae_derive_pt(interface->wpa_s.conf->sae_groups,
             interface->wpa_s.current_ssid->ssid,
             interface->wpa_s.current_ssid->ssid_len,
             interface->wpa_s.current_ssid->sae_password,
             os_strlen(interface->wpa_s.current_ssid->sae_password),
             interface->wpa_s.current_ssid->sae_password_id);
+        wifi_hal_error_print("%s:%d: MJ point to - curr_bss->pt:[%p]\n",
+            __func__, __LINE__, interface->wpa_s.current_ssid->pt);
     }
 
 #ifdef CONFIG_WIFI_EMULATOR
     interface->wpa_s.driver = &g_wpa_supplicant_driver_nl80211_ops;
+    wifi_hal_error_print("%s:%d: MJ point to - driver:[%p]\n",
+        __func__, __LINE__, interface->wpa_s.driver);
 #else
     interface->wpa_s.driver = &g_wpa_driver_nl80211_ops;
 #endif
     memcpy(interface->wpa_s.conf->ssid, interface->wpa_s.current_ssid, sizeof(struct wpa_ssid));
+    wifi_hal_error_print("%s:%d: MJ point to - conf->ssid:[%p]\n",
+        __func__, __LINE__, interface->wpa_s.conf->ssid);
     memcpy(interface->wpa_s.bssid, backhaul->bssid, ETH_ALEN);
+    wifi_hal_error_print("%s:%d: MJ point to - bssid:[%p]\n",
+        __func__, __LINE__, interface->wpa_s.bssid);
     dl_list_add(&interface->wpa_s.bss, &interface->wpa_s.current_bss->list);
-
+    wifi_hal_error_print("%s:%d: MJ point to - bss:[%p]\n",
+        __func__, __LINE__, &interface->wpa_s.bss);
     bss = wpa_bss_get_bssid_latest(&interface->wpa_s, backhaul->bssid);
+    wifi_hal_error_print("%s:%d: MJ point to - bss:[%p]\n", __func__, __LINE__, bss);
     if (bss) { 
         memcpy(bss + 1, bss_ie->buff, bss_ie->buff_len);
+        wifi_hal_error_print("%s:%d: MJ point to - bss->ie:[%p]\n",
+            __func__, __LINE__, bss + 1);
     }
 
     wpa_hexdump(MSG_MSGDUMP, "CONN_BSS_IE", bss_ie->buff, bss_ie->buff_len);
-
+    wifi_hal_error_print("%s:%d: MJ point to - before sme_send_authentication\n", __func__, __LINE__);
     sme_send_authentication(&interface->wpa_s, curr_bss, interface->wpa_s.current_ssid, 1);
+    wifi_hal_error_print("%s:%d: MJ point to - after sme_send_authentication\n", __func__, __LINE__);
     return 0;
 #else
     if (interface->u.sta.pending_rx_eapol) {
@@ -9199,8 +9224,10 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     update_eapol_sm_params(interface);
     eapol_sm_notify_portEnabled(interface->u.sta.wpa_sm->eapol, FALSE);
     eapol_sm_notify_portValid(interface->u.sta.wpa_sm->eapol, FALSE);
+    wifi_hal_error_print("%s:%d: MJ point to - before nl80211_drv_cmd_msg\n", __func__, __LINE__);
 
     if ((msg = nl80211_drv_cmd_msg(g_wifi_hal.nl80211_id, interface, 0, NL80211_CMD_CONNECT)) == NULL) {
+        wifi_hal_error_print("%s:%d: Failed to create NL command\n", __func__, __LINE__);
         return -1;
     }
 
@@ -9209,15 +9236,18 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
             to_mac_str(backhaul->bssid, bssid_str), backhaul->freq, backhaul->ssid);
 
     nla_put(msg, NL80211_ATTR_SSID, strlen(backhaul->ssid), backhaul->ssid);
+    wifi_hal_error_print("%s:%d: MJ point to - after nla_put ssid\n", __func__, __LINE__);
     nla_put(msg, NL80211_ATTR_MAC, sizeof(backhaul->bssid), backhaul->bssid);
     nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, backhaul->freq);
-
+    wifi_hal_error_print("%s:%d: MJ point to - after nla_put bssid freq\n", __func__, __LINE__);
     pos = rsn_ie;
-
+wifi_hal_error_print("%s:%d MJ point to - before get_ie\n", __func__, __LINE__);
     bh_rsn = (ieee80211_tlv_t *)get_ie(backhaul->ie, backhaul->ie_len, WLAN_EID_RSN);
+    wifi_hal_error_print("%s:%d MJ point to - after get_ie\n", __func__, __LINE__);
     if (bh_rsn &&
         (wpa_parse_wpa_ie_rsn((const u8 *)bh_rsn, bh_rsn->length + sizeof(ieee80211_tlv_t),
              &data) == 0)) {
+        wifi_hal_error_print("%s:%d: RSN IE found in beacon/probe response\n", __func__, __LINE__);
         wpa_conf.wpa_group = data.group_cipher;
         wpa_conf.rsn_pairwise = WPA_CIPHER_CCMP;
         if (data.key_mgmt & WPA_KEY_MGMT_NONE) {
@@ -9289,6 +9319,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     }
 
     wpa_conf.ieee80211w = 0;
+    wifi_hal_error_print("%s:%d: MJ point to - before rsn_ie build\n", __func__, __LINE__);
 
     if (security->mode != wifi_security_mode_none) {
         if ((ret = wpa_write_rsn_ie(&wpa_conf, pos, rsn_ie + sizeof(rsn_ie) - pos, NULL)) < 0) {
@@ -9326,11 +9357,12 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         nla_put_flag(msg, NL80211_ATTR_PRIVACY);
     } else {
         nla_put_u32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM);
-        wifi_hal_dbg_print("security mode open:%d encr:%d\n", security->mode, security->encr);
+        wifi_hal_dbg_print("MJ security mode open:%d encr:%d\n", security->mode, security->encr);
     }
 #ifdef EAPOL_OVER_NL
     if (g_wifi_hal.platform_flags & PLATFORM_FLAGS_CONTROL_PORT_FRAME &&
         interface->bss_nl_connect_event_fd >= 0) {
+        wifi_hal_error_print("%s:%d: MJ point to - before nl80211_set_rx_control_port_owner\n", __func__, __LINE__);
         ret = nl80211_set_rx_control_port_owner(msg, interface);
     } else {
 #endif
@@ -9342,7 +9374,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         return 0;
     }
 #endif /* CONFIG_WIFI_EMULATOR || BANANA_PI_PORT*/
-    wifi_hal_error_print("%s:%d: connect command failed: ret=%d (%s)\n", __func__, __LINE__,
+    wifi_hal_error_print("%s:%d: MJ connect command failed: ret=%d (%s)\n", __func__, __LINE__,
             ret, strerror(-ret));
 
     return -1;
