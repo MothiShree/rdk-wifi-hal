@@ -9173,18 +9173,50 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     }
 
     if (rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E) ||
-        radio->oper_param.band == WIFI_FREQUENCY_6_BAND) {
-        interface->wpa_s.conf->sae_pwe = 1;
-        wifi_hal_error_print("%s:%d: MJ SAE H2E is enabled\n", __func__, __LINE__);
-        interface->wpa_s.current_ssid->pt = sae_derive_pt(interface->wpa_s.conf->sae_groups,
-            interface->wpa_s.current_ssid->ssid,
-            interface->wpa_s.current_ssid->ssid_len,
-            interface->wpa_s.current_ssid->sae_password,
-            os_strlen(interface->wpa_s.current_ssid->sae_password),
-            interface->wpa_s.current_ssid->sae_password_id);
-        wifi_hal_error_print("%s:%d: MJ point to - curr_bss->pt:[%p]\n",
-            __func__, __LINE__, interface->wpa_s.current_ssid->pt);
+    radio->oper_param.band == WIFI_FREQUENCY_6_BAND) {
+
+    interface->wpa_s.conf->sae_pwe = 1;
+    wifi_hal_error_print("%s:%d: MJ SAE H2E is enabled\n", __func__, __LINE__);
+
+    wifi_hal_error_print("%s:%d: MJ: sae_groups = %p\n",
+        __func__, __LINE__, interface->wpa_s.conf->sae_groups);
+
+    wifi_hal_error_print("%s:%d: MJ: ssid = '%.*s', ssid_len = %d\n",
+        __func__, __LINE__,
+        interface->wpa_s.current_ssid->ssid_len,
+        interface->wpa_s.current_ssid->ssid,
+        interface->wpa_s.current_ssid->ssid_len);
+
+    for (int i = 0; i < interface->wpa_s.current_ssid->ssid_len; i++) {
+        wifi_hal_error_print("%s:%d: MJ: ssid[%d] = 0x%02x\n",
+            __func__, __LINE__, i,
+            interface->wpa_s.current_ssid->ssid[i]);
     }
+
+    const char *sae_pwd = interface->wpa_s.current_ssid->sae_password;
+    wifi_hal_error_print("%s:%d: MJ: sae_password_len = %d\n",
+        __func__, __LINE__, sae_pwd ? os_strlen(sae_pwd) : -1);
+
+    wifi_hal_error_print("%s:%d: MJ: sae_password_id = %s\n",
+        __func__, __LINE__,
+        interface->wpa_s.current_ssid->sae_password_id ?
+        interface->wpa_s.current_ssid->sae_password_id : "NULL");
+
+    wifi_hal_error_print("%s:%d: MJ: sae_password = %s\n",
+        __func__, __LINE__, sae_pwd ? sae_pwd : "NULL");
+
+    interface->wpa_s.current_ssid->pt = sae_derive_pt(
+        interface->wpa_s.conf->sae_groups,
+        interface->wpa_s.current_ssid->ssid,
+        interface->wpa_s.current_ssid->ssid_len,
+        interface->wpa_s.current_ssid->sae_password,
+        os_strlen(interface->wpa_s.current_ssid->sae_password),
+        interface->wpa_s.current_ssid->sae_password_id);
+
+    wifi_hal_error_print("%s:%d: MJ point to - curr_bss->pt:[%p]\n",
+        __func__, __LINE__, interface->wpa_s.current_ssid->pt);
+}
+
 
 #ifdef CONFIG_WIFI_EMULATOR
     interface->wpa_s.driver = &g_wpa_supplicant_driver_nl80211_ops;
