@@ -9213,7 +9213,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         interface->wpa_s.current_ssid->ssid,
         interface->wpa_s.current_ssid->ssid_len,
         interface->wpa_s.current_ssid->sae_password,
-        os_strlen(interface->wpa_s.current_ssid->sae_password),
+        len,
         interface->wpa_s.current_ssid->sae_password_id);
 
     wifi_hal_error_print("%s:%d: MJ point to - curr_bss->pt:[%p]\n",
