@@ -9039,7 +9039,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     interface->wpa_s.current_ssid->key_mgmt = interface->u.sta.wpa_sm->key_mgmt;
     if ((security->mode == wifi_security_mode_wpa3_personal) ||
         (security->mode == wifi_security_mode_wpa3_transition) ||
-        (security->mode == wifi_security_mode_wpa3_enterprise)|| (security->mode == wifi_security_mode_enhanced_open)) {
+        (security->mode == wifi_security_mode_wpa3_enterprise)) {
         interface->wpa_s.current_ssid->ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
         if (interface->wpa_s.conf->sae_groups == NULL) {
             interface->wpa_s.conf->sae_groups =
@@ -9073,7 +9073,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
 
     if ( (security->mode == wifi_security_mode_wpa3_personal) ||
         (security->mode == wifi_security_mode_wpa3_compatibility) ||
-        (security->mode == wifi_security_mode_wpa3_transition) || (security->mode == wifi_security_mode_enhanced_open)) {
+        (security->mode == wifi_security_mode_wpa3_transition)) {
         if (interface->wpa_s.current_ssid->sae_password == NULL) {
             interface->wpa_s.current_ssid->sae_password = malloc(MAX_PWD_LEN);
         }
@@ -9205,15 +9205,15 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     wifi_hal_error_print("%s:%d: MJ: sae_password = %s\n",
         __func__, __LINE__, sae_pwd ? sae_pwd : "NULL");
 
-    /*size_t len = interface->wpa_s.current_ssid->sae_password ? os_strlen(interface->wpa_s.current_ssid->sae_password) : 0; 
+    size_t len = interface->wpa_s.current_ssid->sae_password ? os_strlen(interface->wpa_s.current_ssid->sae_password) : 0; 
     wifi_hal_error_print("%s:%d: MJ: sae_password length = %zu\n",
-        __func__, __LINE__, len);*/
+        __func__, __LINE__, len);
     interface->wpa_s.current_ssid->pt = sae_derive_pt(
         interface->wpa_s.conf->sae_groups,
         interface->wpa_s.current_ssid->ssid,
         interface->wpa_s.current_ssid->ssid_len,
         interface->wpa_s.current_ssid->sae_password,
-        os_strlen(interface->wpa_s.current_ssid->sae_password),
+        len,
         interface->wpa_s.current_ssid->sae_password_id);
 
     wifi_hal_error_print("%s:%d: MJ point to - curr_bss->pt:[%p]\n",

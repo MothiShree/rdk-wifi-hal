@@ -2707,7 +2707,9 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
             wpa_sm_set_param(sm, WPA_PARAM_GROUP, WPA_CIPHER_NONE);
         } else {
 #if defined(CONFIG_WIFI_EMULATOR)
+wifi_hal_dbg_print("%s:%d MJ Entered at Emulator macro\n", __func__, __LINE__);
             if (sec->mode != wifi_security_mode_none) {
+                wifi_hal_dbg_print("%s:%d MJ Entered at if cond\n", __func__, __LINE__);
                 if (sec->mode == wifi_security_mode_wpa2_personal) {
                     sel = (WPA_KEY_MGMT_PSK | wpa_key_mgmt_11w) & data.key_mgmt;
                 } else if (sec->mode == wifi_security_mode_wpa2_enterprise) {
@@ -2721,8 +2723,11 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
                     sel = (WPA_KEY_MGMT_IEEE8021X_SHA256 | wpa_key_mgmt_11w) & data.key_mgmt;
                 } else if (sec->mode == wifi_security_mode_wpa3_compatibility) {
                     sel = (WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_SAE) & data.key_mgmt;
+                } else if (sec->mode == wif_security_mode_enhanced_open){
+                    wifi_hal_dbg_print("%s:%d MJ Entered at enhanced_open_cond\n", __func__, __LINE__);
+                    sel = (WPA_KEY_MGMT_OWE) & data.key_mgmt;
                 } else {
-                    wifi_hal_error_print("Unsupported security mode : 0x%x\n", sec->mode);
+                    wifi_hal_error_print("%s:%d: MJ Unsupported security mode : 0x%x\n", __func__, __LINE__, sec->mode);
                     return;
                 }
             } else
@@ -2774,7 +2779,7 @@ void update_wpa_sm_params(wifi_interface_info_t *interface)
             } else if (sec->mode == wifi_security_mode_wpa3_compatibility) {
                 sel = (WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_SAE);
             } else {
-                wifi_hal_error_print("Unsupported security mode : 0x%x\n", sec->mode);
+                wifi_hal_error_print("%s:%d: MJ Unsupported security mode : 0x%x\n", __func__, __LINE__, sec->mode);
                 return;
             }
             key_mgmt = pick_akm_suite(sel);
