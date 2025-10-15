@@ -9161,12 +9161,12 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     if (rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E) ||
         radio->oper_param.band == WIFI_FREQUENCY_6_BAND) {
         interface->wpa_s.conf->sae_pwe = 1;
-
+        size_t len = interface->wpa_s.current_ssid->sae_password ? os_strlen(interface->wpa_s.current_ssid->sae_password) : 0; 
         interface->wpa_s.current_ssid->pt = sae_derive_pt(interface->wpa_s.conf->sae_groups,
             interface->wpa_s.current_ssid->ssid,
             interface->wpa_s.current_ssid->ssid_len,
             interface->wpa_s.current_ssid->sae_password,
-            os_strlen(interface->wpa_s.current_ssid->sae_password),
+            len,
             interface->wpa_s.current_ssid->sae_password_id);
     }
 
