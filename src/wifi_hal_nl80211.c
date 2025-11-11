@@ -9155,12 +9155,12 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         } else {
             interface->wpa_s.conf->sae_pwe = 1;
         }
-
+        size_t len = interface->wpa_s.current_ssid->sae_password ? os_strlen(interface->wpa_s.current_ssid->sae_password) : 0;
         interface->wpa_s.current_ssid->pt = sae_derive_pt(interface->wpa_s.conf->sae_groups,
             interface->wpa_s.current_ssid->ssid,
             interface->wpa_s.current_ssid->ssid_len,
             interface->wpa_s.current_ssid->sae_password,
-            os_strlen(interface->wpa_s.current_ssid->sae_password),
+            len,
             interface->wpa_s.current_ssid->sae_password_id);
     }
 
