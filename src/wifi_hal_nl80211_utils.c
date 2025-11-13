@@ -1961,11 +1961,11 @@ wifi_interface_info_t *get_interface_by_vap_index(unsigned int vap_index)
 
     wifi_hal_dbg_print("%s:%d: MJ { vap_index:[%d] } g_wifi_hal.num_radios:[%d]\r\n",__func__, __LINE__, vap_index, g_wifi_hal.num_radios);
     for (i = 0; i < g_wifi_hal.num_radios; i++) {
+		radio = &g_wifi_hal.radio_info[i];
  wifi_hal_dbg_print("%s:%d: MJ scanning radio[%u] name=%s index=%d rdk_index=%d\n",
                            __func__, __LINE__, i,
                            radio->name ? radio->name : "<null>",
                            radio->index, radio->rdk_radio_index);
-        radio = &g_wifi_hal.radio_info[i];
         interface = hash_map_get_first(radio->interface_map);
 if (!interface) {
             wifi_hal_dbg_print("%s:%d: MJ radio[%u]: interface_map is empty\n",
