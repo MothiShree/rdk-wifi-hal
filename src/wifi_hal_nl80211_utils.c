@@ -1961,8 +1961,10 @@ wifi_interface_info_t *get_interface_by_vap_index(unsigned int vap_index)
 
     wifi_hal_dbg_print("%s:%d: MJ { vap_index:[%d] } g_wifi_hal.num_radios:[%d]\r\n",__func__, __LINE__, vap_index, g_wifi_hal.num_radios);
     for (i = 0; i < g_wifi_hal.num_radios; i++) {
-wifi_hal_dbg_print("%s:%d: MJ Checking radio[%u]: name=%s, num_interfaces=%u\n",
-                           __func__, __LINE__, i, radio->name, radio->num_vaps);
+ wifi_hal_dbg_print("%s:%d: MJ scanning radio[%u] name=%s index=%d rdk_index=%d\n",
+                           __func__, __LINE__, i,
+                           radio->name ? radio->name : "<null>",
+                           radio->index, radio->rdk_radio_index);
         radio = &g_wifi_hal.radio_info[i];
         interface = hash_map_get_first(radio->interface_map);
 if (!interface) {
@@ -1971,19 +1973,20 @@ if (!interface) {
 	continue;
         }
         while (interface != NULL) {
-			wifi_hal_dbg_print("%s:%d: MJ Found VAP[%u] (interface_name=%s)\n",
+			wifi_hal_dbg_print("%s:%d:  MJ interface=%s vap_index=%d\n",
                                __func__, __LINE__,
-                               interface->vap_info.vap_index,
-                               interface->vap_info.name);
+                               interface->name ? interface->name : "<null>",
+                               interface->vap_info.vap_index);
             if (interface->vap_info.vap_index == vap_index) {
-				wifi_hal_dbg_print("%s:%d: MJ Match found for vap_index=%u on radio[%u]\n",
-                                   __func__, __LINE__, vap_index, i);
+				wifi_hal_dbg_print("%s:%d:  MJ found interface %s (%p) for vap_index=%u\n",
+                                   __func__, __LINE__, interface->name ? interface->name : "<null>",
+                                   (void *)interface, vap_index);
                 return interface;
             }
             interface = hash_map_get_next(radio->interface_map, interface);
         }
     }
- wifi_hal_dbg_print("%s:%d: MJ No match found for vap_index=%u\n",
+  wifi_hal_dbg_print("%s:%d: MJ interface for vap_index=%u not found\n",
                        __func__, __LINE__, vap_index);
     return NULL;
 }
