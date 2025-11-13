@@ -8982,15 +8982,15 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
         (int *)&radio_index);
     wifi_ie_info_t *bss_ie = &interface->bss_elem_ie[radio_index];
 	if (bss_ie){
-	wifi_hal_error_print("%s:%d: MJ bss_ie: id=%d, len=%d", __func__, __LINE__, bss_ie->id, bss_ie->len);
+	wifi_hal_error_print("%s:%d: MJ bss_ie:len=%d\n", __func__, __LINE__, bss_ie->buff_len);
 	}else{
-		wifi_hal_error_print("%s:%d: MJ bss_ie else case", __func__, __LINE__);
+		wifi_hal_error_print("%s:%d: MJ bss_ie else case\n", __func__, __LINE__);
 	}
     wifi_ie_info_t *beacon_ie = &interface->beacon_elem_ie[radio_index];
 	if(beacon_ie){
-	wifi_hal_error_print("%s:%d: MJ beacon_ie: id=%d, len=%d", __func__, __LINE__, beacon_ie->id, beacon_ie->len);
+	wifi_hal_error_print("%s:%d: MJ beacon_ie:len=%d\n", __func__, __LINE__, beacon_ie->buff_len);
 	}else{
-		wifi_hal_error_print("%s:%d: MJ beacon_ie else case", __func__, __LINE__);
+		wifi_hal_error_print("%s:%d: MJ beacon_ie else case\n", __func__, __LINE__);
 	}
     wifi_hal_dbg_print("%s:%d:bssid:%s frequency:%d ssid:%s sta radio:%d for vap radio:%d\n",
         __func__, __LINE__, to_mac_str(backhaul->bssid, bssid_str),
