@@ -1091,6 +1091,14 @@ INT wifi_hal_connect(INT ap_index, wifi_bss_info_t *bss)
             }
             tmp = hash_map_get_next(interface->scan_info_map, tmp);
         }
+wifi_hal_dbg_print("%s:%d: MJ Best entry selected: ssid=%s bssid=%02x:%02x:%02x:%02x:%02x:%02x "
+                   "rssi=%d ie_len=%u\n",
+                   __func__, __LINE__,
+                   best->ssid,
+                   best->bssid[0], best->bssid[1], best->bssid[2],
+                   best->bssid[3], best->bssid[4], best->bssid[5],
+                   best->rssi,
+                   best->ie_len /* or best->ie_length depending on your struct */);
 
         if (best == NULL) {
             pthread_mutex_unlock(&interface->scan_info_mutex);
