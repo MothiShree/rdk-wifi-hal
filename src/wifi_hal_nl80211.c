@@ -8980,6 +8980,24 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     wifi_hal_error_print("%s:%d: MJ ENtry", __func__, __LINE__);
     wifi_convert_freq_band_to_radio_index(backhaul->oper_freq_band,
         (int *)&radio_index);
+wifi_hal_dbg_print("%s:%d: MJ backhaul->oper_freq_band=%d -> radio_index=%u\n",
+                   __func__, __LINE__, backhaul->oper_freq_band, radio_index);
+
+wifi_hal_dbg_print("%s:%d: MJ interface=%p name=%s vap_index=%u vap.radio_index=%u\n",
+                   __func__, __LINE__, interface,
+                   interface->vap_info.vap_name, interface->vap_info.vap_index,
+                   interface->vap_info.radio_index);
+
+wifi_hal_dbg_print("%s:%d: bss_elem_ie[%u].buff_len=%u, ie=%p\n",
+                   __func__, __LINE__, radio_index,
+                   interface->bss_elem_ie[radio_index].buff_len,
+                   interface->bss_elem_ie[radio_index].ie);
+
+wifi_hal_dbg_print("%s:%d: beacon_elem_ie[%u].buff_len=%u, ie=%p\n",
+                   __func__, __LINE__, radio_index,
+                   interface->beacon_elem_ie[radio_index].buff_len,
+                   interface->beacon_elem_ie[radio_index].ie);
+
     wifi_ie_info_t *bss_ie = &interface->bss_elem_ie[radio_index];
 	if (bss_ie){
 	wifi_hal_error_print("%s:%d: MJ bss_ie:len=%d\n", __func__, __LINE__, bss_ie->buff_len);
