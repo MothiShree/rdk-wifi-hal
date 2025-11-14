@@ -8988,15 +8988,15 @@ wifi_hal_dbg_print("%s:%d: MJ interface=%p name=%s vap_index=%u vap.radio_index=
                    interface->vap_info.vap_name, interface->vap_info.vap_index,
                    interface->vap_info.radio_index);
 
-wifi_hal_dbg_print("%s:%d: bss_elem_ie[%u].buff_len=%u, ie=%p\n",
+wifi_hal_dbg_print("%s:%d: MJ bss_elem_ie[%u].buff_len=%u, ie=%p\n",
                    __func__, __LINE__, radio_index,
                    interface->bss_elem_ie[radio_index].buff_len,
-                   interface->bss_elem_ie[radio_index].ie);
+                   interface->bss_elem_ie[radio_index].buff);
 
-wifi_hal_dbg_print("%s:%d: beacon_elem_ie[%u].buff_len=%u, ie=%p\n",
+wifi_hal_dbg_print("%s:%d: MJ beacon_elem_ie[%u].buff_len=%u, ie=%p\n",
                    __func__, __LINE__, radio_index,
                    interface->beacon_elem_ie[radio_index].buff_len,
-                   interface->beacon_elem_ie[radio_index].ie);
+                   interface->beacon_elem_ie[radio_index].buff);
 
     wifi_ie_info_t *bss_ie = &interface->bss_elem_ie[radio_index];
 	if (bss_ie){
