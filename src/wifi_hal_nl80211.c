@@ -10419,14 +10419,14 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
 
     gnlh = nlmsg_data(nlmsg_hdr(msg));
     nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
+wifi_hal_stats_error_print("%s:%d: MJ entering to the scan_info_handler\n", __func__, __LINE__);
     if (tb[NL80211_ATTR_BSS] == NULL) {
         wifi_hal_stats_error_print("%s:%d: [SCAN] bss attribute not present\n", __func__, __LINE__);
         return NL_SKIP;
     }
 
     if (nla_parse_nested(bss, NL80211_BSS_MAX, tb[NL80211_ATTR_BSS], bss_policy) != 0) {
-        wifi_hal_stats_error_print("%s:%d: [SCAN] nested bss attribute not present\n", __func__, __LINE__);
+        wifi_hal_stats_error_print("%s:%d: MJ [SCAN] nested bss attribute not present\n", __func__, __LINE__);
         return NL_SKIP;
     }
 
@@ -10441,21 +10441,39 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
     if (bss[NL80211_BSS_INFORMATION_ELEMENTS]) {
         ie = nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
         len = nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
-        //wifi_hal_stats_dbg_print("[SCAN] BSSID: %s, IE LEN %d\n", bssid_str, len);
+        wifi_hal_stats_dbg_print("MJ [SCAN] BSSID: %s, IE LEN %d\n", bssid_str, len);
         if (len > MAX_IE_ELEMENT_LEN) {
-            wifi_hal_stats_error_print("[Wrong NL SCAN output] BSSID: %s, IE LEN %d\n", bssid_str, len);
+            wifi_hal_stats_error_print("MJ [Wrong NL SCAN output] BSSID: %s, IE LEN %d\n", bssid_str, len);
             return NL_SKIP;
         }
     } else {
         ie = NULL;
         len = 0;
-        // wifi_hal_dbg_print("%s:%d: [SCAN] BSS info for BSSID:%s not found\n", __func__, __LINE__, key);
+        wifi_hal_stats_dbg_print("%s:%d: MJ [SCAN] BSS info for BSSID:%s not found\n", __func__, __LINE__, key);
         return NL_SKIP;
     }
 
     if (bss[NL80211_BSS_BEACON_IES]) {
         beacon_ies = nla_data(bss[NL80211_BSS_BEACON_IES]);
         beacon_ie_len = nla_len(bss[NL80211_BSS_BEACON_IES]);
+		wifi_hal_stats_dbg_print("%s:%d: MJ NL80211_BSS_BEACON_IES present, len=%u\n",
+                           __func__, __LINE__, (unsigned int)beacon_ie_len);
+
+        if (beacon_ie_len > 0) {
+            unsigned int i;
+            char hexbuf[64] = { 0 };
+
+            /* Build a short hex preview (up to first 16 bytes) */
+            for (i = 0; i < (unsigned int)beacon_ie_len && i < 16 && (i * 3) < sizeof(hexbuf); i++) {
+                snprintf(&hexbuf[i * 3], 4, "%02x ", beacon_ies[i]);
+            }
+            wifi_hal_stats_dbg_print("%s:%d: MJ beacon_ies[0..%u]: %s\n",
+                               __func__, __LINE__, (unsigned int)(beacon_ie_len > 16 ? 16 : beacon_ie_len),
+                               hexbuf);
+        } else {
+            wifi_hal_stats_dbg_print("%s:%d: MJ beacon_ies length is zero\n", __func__, __LINE__);
+        }
+
     }
 
     // - create separate AP info entry for wifi_getNeighboringWiFiStatus().
@@ -10538,9 +10556,13 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
 
     if (ie) {
         // Parse standard IEs including SSID
+		wifi_hal_dbg_print("%s:%d: MJ parse_ies() - using IE buffer, len=%u\n",
+                           __func__, __LINE__, (unsigned int)len);
         parse_ies(ie, len, scan_info_ap);
     } else {
         // Parse IEs from beacon IEs (including SSID)
+		wifi_hal_dbg_print("%s:%d: MJ parse_ies() - using beacon_ies buffer, len=%u\n",
+                           __func__, __LINE__, (unsigned int)beacon_ie_len);
         parse_ies(beacon_ies, beacon_ie_len, scan_info_ap);
     }
 
@@ -10548,6 +10570,22 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
         // Copy into IEs buffer
         scan_info_ap->ie_len = len;
         memcpy(scan_info_ap->ie, ie, scan_info_ap->ie_len);
+		wifi_hal_dbg_print("%s:%d: Copied %u bytes into scan_info_ap->ie (ptr=%p)\n",
+                           __func__, __LINE__, (unsigned int)scan_info_ap->ie_len,
+                           (void *)scan_info_ap->ie);
+		/* small hex preview of the first up-to-16 bytes */
+        {
+            unsigned int i, preview_len = (scan_info_ap->ie_len > 16) ? 16 : scan_info_ap->ie_len;
+            char hexbuf[3 * 16 + 1] = { 0 };
+            for (i = 0; i < preview_len; i++)
+                snprintf(&hexbuf[i * 3], sizeof(hexbuf) - (i * 3), "%02x ", scan_info_ap->ie[i]);
+            wifi_hal_dbg_print("%s:%d: MJ scan_info_ap->ie[0..%u]: %s\n",
+                               __func__, __LINE__, preview_len, hexbuf);
+        }
+    } else {
+        wifi_hal_dbg_print("%s:%d: MJ No IE copied to scan_info_ap->ie (ie=%p len=%d, beacon_ie_len=%d)\n",
+                           __func__, __LINE__, (void *)ie, (int)len, (int)beacon_ie_len);
+
     }
 
     if (vap->vap_mode == wifi_vap_mode_sta) {
