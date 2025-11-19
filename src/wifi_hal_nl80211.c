@@ -10681,7 +10681,7 @@ wifi_hal_stats_error_print("%s:%d: MJ entering to the scan_info_handler\n", __fu
                             __func__, __LINE__, key, scan_info_ap->ssid, scan_info_ap->freq, scan_info_ap->rssi);
     pthread_mutex_unlock(&interface->scan_info_ap_mutex);
 
-    wifi_hal_dbg_print("%s:%d: MJ [SCAN] bssid:%s, ssid:%s\n", __func__, __LINE__, bssid_str, l_ssid);
+    // wifi_hal_dbg_print("%s:%d: [SCAN] bssid:%s, ssid:%s\n", __func__, __LINE__, bssid_str, l_ssid);
     return NL_SKIP;
 }
 
