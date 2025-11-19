@@ -9332,10 +9332,10 @@ wifi_hal_dbg_print("%s:%d: MJ beacon_elem_ie[%u].buff_len=%u, ie=%p\n",
         security->mode == wifi_security_mode_wpa3_enterprise ||
         security->mode == wifi_security_mode_wpa3_transition) {
         // WPA3 REQUIRES MFP
-        wpa_conf.ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
+        wpa_conf.ieee80211w = (enum mfp_options)MGMT_FRAME_PROTECTION_REQUIRED;
         wpa_conf.group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
     } else {
-        wpa_conf.ieee80211w = security->mfp;
+        wpa_conf.ieee80211w = (enum mfp_options)security->mfp;
     }
 #endif
 
