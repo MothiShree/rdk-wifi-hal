@@ -10656,8 +10656,11 @@ wifi_hal_stats_error_print("%s:%d: MJ entering to the scan_info_handler\n", __fu
                 pthread_mutex_unlock(&interface->scan_info_mutex);
                 free(scan_info);
                 free(scan_info_ap);
-                wifi_hal_stats_error_print("%s:%d: [SCAN] map adding error!\n", __func__, __LINE__);
+                wifi_hal_stats_error_print("%s:%d: MJ [SCAN] map adding error!\n", __func__, __LINE__);
                 return NL_SKIP;
+            } else {
+                wifi_hal_stats_dbg_print("%s:%d: MJ [SCAN] added bssid:%s ssid:%s to scan_info_map\n",
+                    __func__, __LINE__, key, scan_info_ap->ssid);
             }
         }
         // - copy full info
@@ -10673,9 +10676,12 @@ wifi_hal_stats_error_print("%s:%d: MJ entering to the scan_info_handler\n", __fu
         free(scan_info_ap);
         return NL_SKIP;
     }
+	 /* HAL print to confirm BSSID was added */
+    wifi_hal_stats_dbg_print("%s:%d: MJ [SCAN] Added to scan_info_ap_map - bssid:%s ssid:%s freq:%d rssi:%d\n",
+                            __func__, __LINE__, key, scan_info_ap->ssid, scan_info_ap->freq, scan_info_ap->rssi);
     pthread_mutex_unlock(&interface->scan_info_ap_mutex);
 
-    // wifi_hal_dbg_print("%s:%d: [SCAN] bssid:%s, ssid:%s\n", __func__, __LINE__, bssid_str, l_ssid);
+    wifi_hal_dbg_print("%s:%d: MJ [SCAN] bssid:%s, ssid:%s\n", __func__, __LINE__, bssid_str, l_ssid);
     return NL_SKIP;
 }
 
