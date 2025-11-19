@@ -10586,7 +10586,10 @@ wifi_hal_stats_error_print("%s:%d: MJ entering to the scan_info_handler\n", __fu
                            __func__, __LINE__, (void *)ie, (int)len, (int)beacon_ie_len);
 
     }
-
+	
+wifi_hal_stats_dbg_print("%s:%d: MJ [SCAN] found backhaul bssid:%s rssi:%d on freq:%d for ssid:%s 2sssid:%s\n", __func__, __LINE__,
+                        to_mac_str(bssid, bssid_str), scan_info_ap->rssi, scan_info_ap->freq, scan_info_ap->ssid, vap->u.sta_info.ssid);
+	
     if (vap->vap_mode == wifi_vap_mode_sta) {
         // Wildcard STA VAP SSIDs cannot be used to set the backhaul BSSID
         if (strcmp(scan_info_ap->ssid, vap->u.sta_info.ssid) == 0 &&
