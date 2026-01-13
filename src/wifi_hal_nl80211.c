@@ -771,6 +771,7 @@ static bool is_probe_req_to_our_ssid(struct ieee80211_mgmt *mgmt, unsigned int l
     ssid = ie + 2;
 
     ret = strncmp(ssid, interface->u.ap.hapd.conf->ssid.ssid, ssid_len) == 0;
+	wifi_hal_error_print("%s:%d: MJ SSID:%s \n", __func__, __LINE__, interface->u.ap.hapd.conf->ssid.ssid);
     pthread_mutex_unlock(&g_wifi_hal.hapd_lock);
 
     return ret;
@@ -2779,6 +2780,8 @@ void recv_data_frame(wifi_interface_info_t *interface)
                         wifi_hal_error_print("%s:%d: Failed to send packet for interface: %s error: %d(%s)\n", __func__, __LINE__, interface->name, ret, strerror(-ret));
                     }
                 }
+				is_probe_req_to_our_ssid(mgmt, len, interface);
+				wifi_hal_error_print("%s:%d: MJ after the call \n", __func__, __LINE__);
 
                 free(data);
             }
