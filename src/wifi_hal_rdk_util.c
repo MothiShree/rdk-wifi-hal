@@ -56,6 +56,7 @@
 #include <cjson/cJSON.h>
 #include <sys/types.h>
 #include <ifaddrs.h>
+#include <limits.h>
 
 /* WPS_METHOD_LIMIT */
 /* WIFI_ONBOARDINGMETHODS_USBFLASHDRIVE | WIFI_ONBOARDINGMETHODS_ETHERNET | WIFI_ONBOARDINGMETHODS_LABEL | WIFI_ONBOARDINGMETHODS_DISPLAY | WIFI_ONBOARDINGMETHODS_EXTERNALNFCTOKEN | WIFI_ONBOARDINGMETHODS_INTEGRATEDNFCTOKEN | WIFI_ONBOARDINGMETHODS_NFCINTERFACE | WIFI_ONBOARDINGMETHODS_PUSHBUTTON | WIFI_ONBOARDINGMETHODS_PIN | WIFI_ONBOARDINGMETHODS_PHYSICALPUSHBUTTON | WIFI_ONBOARDINGMETHODS_PHYSICALDISPLAY | WIFI_ONBOARDINGMETHODS_VIRTUALPUSHBUTTON |WIFI_ONBOARDINGMETHODS_VIRTUALDISPLAY | WIFI_ONBOARDINGMETHODS_EASYCONNECT  = 0x7FFF */ 
@@ -156,6 +157,8 @@ static int move_radio_capability(wifi_radio_capabilities_t *tmp_cap, wifi_radio_
     tmp_cap->cipherSupported = cap->cipherSupported;
     tmp_cap->numcountrySupported = cap->numcountrySupported;
     tmp_cap->maxNumberVAPs = cap->maxNumberVAPs;
+    tmp_cap->mldOperationalCap = cap->mldOperationalCap;
+    tmp_cap->TIDLinkMapNegotiation = cap->TIDLinkMapNegotiation;
     for (j=0 ; j<tmp_cap->numcountrySupported ; j++) {
         tmp_cap->countrySupported[j] = cap->countrySupported[j];
     }
@@ -465,6 +468,10 @@ cJSON *json_open_file(const char *file_name)
     }
     fseek(fp, 0, SEEK_END);
     len = ftell(fp);
+    if (len == UINT_MAX) {
+        fclose(fp);
+        return json;
+    }
     fseek(fp, 0, SEEK_SET);
 
     buff = malloc(len);

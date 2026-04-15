@@ -174,7 +174,7 @@ int platform_get_keypassphrase_default(char *password, int vap_index)
     wifi_hal_dbg_print("%s:%d \n", __func__, __LINE__);
     /* if the vap_index is that of mesh STA then try to obtain the ssid from
        /nvram/EasymeshCfg.json file */
-    if (is_wifi_hal_vap_mesh_sta(vap_index)) {
+    if (is_wifi_hal_vap_mesh_sta(vap_index) || is_wifi_hal_vap_mesh_backhaul(vap_index)) {
         if (!json_parse_backhaul_keypassphrase(password)) {
             wifi_hal_dbg_print("%s:%d, read password from jSON file\n", __func__, __LINE__);
             return 0;
@@ -198,7 +198,7 @@ int platform_get_ssid_default(char *ssid, int vap_index)
     wifi_hal_dbg_print("%s:%d \n", __func__, __LINE__);
     /* if the vap_index is that of mesh STA or mesh backhaul then try to obtain the ssid from
        /nvram/EasymeshCfg.json file */
-    if (is_wifi_hal_vap_mesh_sta(vap_index)) {
+    if (is_wifi_hal_vap_mesh_sta(vap_index) || is_wifi_hal_vap_mesh_backhaul(vap_index)) {
         if (!json_parse_backhaul_ssid(ssid)) {
             wifi_hal_dbg_print("%s:%d, read SSID:%s from jSON file\n", __func__, __LINE__, ssid);
             return 0;
@@ -316,7 +316,7 @@ int platform_get_acl_num(int vap_index, uint *acl_count)
     return 0;
 }
 
-int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t channels, char *buff)
+int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, const wifi_channels_list_t *channels, char *buff)
 {
     wifi_hal_dbg_print("%s:%d \n",__func__,__LINE__);    
     return 0;
@@ -384,9 +384,32 @@ INT wifi_getApEnable(INT apIndex, BOOL *output_bool)
 //--------------------------------------------------------------------------------------------------
 INT wifi_setApMacAddressControlMode(INT apIndex, INT filterMode)
 {
+    wifi_vap_info_t *vap_info = NULL;
+    wifi_interface_info_t *interface = NULL;
+
+    interface = get_interface_by_vap_index(apIndex);
+    if (interface == NULL) {
+        wifi_hal_error_print("%s:%d: interface for ap index:%d not found\n", __func__, __LINE__, apIndex);
+        return RETURN_ERR;
+    }
+
+    vap_info = &interface->vap_info;
+
+    if (vap_info->vap_mode == wifi_vap_mode_ap) {
+        if (filterMode == 0) {
+               vap_info->u.bss_info.mac_filter_enable = FALSE;
+               vap_info->u.bss_info.mac_filter_mode  = wifi_mac_filter_mode_black_list;
+        } else if(filterMode == 1) {
+               vap_info->u.bss_info.mac_filter_enable = TRUE;
+               vap_info->u.bss_info.mac_filter_mode  = wifi_mac_filter_mode_white_list;
+        } else if(filterMode == 2) {
+               vap_info->u.bss_info.mac_filter_enable = TRUE;
+               vap_info->u.bss_info.mac_filter_mode  = wifi_mac_filter_mode_black_list;
+        }
+    }
+
     return RETURN_OK;
 }
-
 
 //--------------------------------------------------------------------------------------------------
 INT wifi_getBssLoad(INT apIndex, BOOL *enabled)
@@ -619,36 +642,6 @@ INT wifi_steering_eventRegister(wifi_steering_eventCB_t event_cb)
     return RETURN_OK;
 }
 
-int wifi_rrm_send_beacon_req(struct wifi_interface_info_t *interface, const u8 *addr,
-    u16 num_of_repetitions, u8 measurement_request_mode, u8 oper_class, u8 channel,
-    u16 random_interval, u16 measurement_duration, u8 mode, const u8 *bssid,
-    struct wpa_ssid_value *ssid, u8 *rep_cond, u8 *rep_cond_threshold, u8 *rep_detail,
-    const u8 *ap_ch_rep, unsigned int ap_ch_rep_len, const u8 *req_elem, unsigned int req_elem_len,
-    u8 *ch_width, u8 *ch_center_freq0, u8 *ch_center_freq1, u8 last_indication)
-{
-    return 0;
-}
-
-/* called by BTM API */
-int wifi_wnm_send_bss_tm_req(struct wifi_interface_info_t *interface, struct sta_info *sta,
-    u8 dialog_token, u8 req_mode, int disassoc_timer, u8 valid_int, const u8 *bss_term_dur,
-    const char *url, const u8 *nei_rep, size_t nei_rep_len, const u8 *mbo_attrs, size_t mbo_len)
-{
-    return 0;
-}
-
-int handle_wnm_action_frame(struct wifi_interface_info_t *interface, const mac_address_t sta,
-    struct ieee80211_mgmt *mgmt, size_t len)
-{
-    return 0;
-}
-
-int handle_rrm_action_frame(struct wifi_interface_info_t *interface, const mac_address_t sta,
-    const struct ieee80211_mgmt *mgmt, size_t len, int ssi_signal)
-{
-    return 0;
-}
-
 INT wifi_setApManagementFramePowerControl(INT apIndex, INT dBm)
 {
     return 0;
@@ -748,9 +741,15 @@ INT wifi_getApInterworkingServiceEnable(INT apIndex, BOOL *output_bool)
     return 0;
 }
 
+INT wifi_sendActionFrameExt(INT apIndex, mac_address_t MacAddr, UINT frequency, UINT wait, UCHAR *frame, UINT len)
+{
+    int res = wifi_hal_send_mgmt_frame(apIndex, MacAddr, frame, len, frequency, wait);
+    return (res == 0) ? WIFI_HAL_SUCCESS : WIFI_HAL_ERROR;
+}
+
 INT wifi_sendActionFrame(INT apIndex, mac_address_t MacAddr, UINT frequency, UCHAR *frame, UINT len)
 {
-    return 0;
+    return wifi_sendActionFrameExt(apIndex, MacAddr, frequency, 0, frame, len);
 }
 
 INT wifi_setDownStreamGroupAddress(INT apIndex, BOOL disabled)
@@ -764,4 +763,16 @@ INT wifi_getApAssociatedClientDiagnosticResult(INT ap_index, char *key,wifi_asso
 INT wifi_getApManagementFramePowerControl(INT apIndex, INT *output_dBm)
 {
     return 0;
+}
+
+UINT wifi_freq_to_op_class(UINT freq)
+{
+    u8 op_class, channel;
+
+    if (ieee80211_freq_to_channel_ext(freq, 0, 0, &op_class, &channel) == NUM_HOSTAPD_MODES){
+        wifi_hal_error_print("%s:%d Failed to get op class for freq : %d\n", __func__, __LINE__, freq);
+        return RETURN_ERR;
+    }
+
+    return op_class;
 }

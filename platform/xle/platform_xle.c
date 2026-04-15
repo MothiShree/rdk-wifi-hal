@@ -262,12 +262,20 @@ int platform_set_radio_pre_init(wifi_radio_index_t index, wifi_radio_operationPa
         sprintf(param_name, "wl%d_country_code", index);
         set_string_nvram_param(param_name, temp_buff);
 
+        snprintf(param_name, sizeof(param_name), "wl%d_reg_mode", index);
+        if (operationParam->DfsEnabled) {
+            set_string_nvram_param(param_name, "h");
+        } else {
+            set_string_nvram_param(param_name, "d");
+        }
+
         if (radio->oper_param.DfsEnabled != operationParam->DfsEnabled) {
             /* userspace selects new channel and configures CSA when radar detected */
             disable_dfs_auto_channel_change(index, true);
         }
+
     }
-    
+
     return 0;
 }
 
@@ -676,7 +684,7 @@ int platform_get_acl_num(int vap_index, uint *acl_count)
     return 0;
 }
 
-int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t channels, char *buff)
+int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, const wifi_channels_list_t *channels, char *buff)
 {
     wifi_hal_dbg_print("%s:%d \n",__func__,__LINE__);    
     return 0;
@@ -716,7 +724,17 @@ int wifi_setApRetrylimit(void *priv)
 
 int platform_set_dfs(wifi_radio_index_t index, wifi_radio_operationParam_t *operationParam)
 {
-    return 0;
+    wifi_hal_info_print("%s:%d DfsEnabled:%u \n", __func__, __LINE__, operationParam->DfsEnabled);
+    if (wifi_setRadioDfsEnable(index, operationParam->DfsEnabled) != RETURN_OK) {
+        wifi_hal_error_print("%s:%d RadioDfsEnable Failed\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+
+    if (wifi_applyRadioSettings(index) != RETURN_OK) {
+        wifi_hal_error_print("%s:%d applyRadioSettings Failed\n", __func__, __LINE__);
+        return RETURN_ERR;
+    }
+    return RETURN_OK;
 }
 
 #if defined(FEATURE_HOSTAP_MGMT_FRAME_CTRL)
@@ -973,3 +991,13 @@ int platform_get_reg_domain(wifi_radio_index_t radioIndex, UINT *reg_domain)
     return RETURN_OK;
 }
 
+INT wifi_sendActionFrameExt(INT apIndex, mac_address_t MacAddr, UINT frequency, UINT wait, UCHAR *frame, UINT len)
+{
+    int res = wifi_hal_send_mgmt_frame(apIndex, MacAddr, frame, len, frequency, wait);
+    return (res == 0) ? WIFI_HAL_SUCCESS : WIFI_HAL_ERROR;
+}
+
+INT wifi_sendActionFrame(INT apIndex, mac_address_t MacAddr, UINT frequency, UCHAR *frame, UINT len)
+{
+    return wifi_sendActionFrameExt(apIndex, MacAddr, frequency, 0, frame, len);
+}
