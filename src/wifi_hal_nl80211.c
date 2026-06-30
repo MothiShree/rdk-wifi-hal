@@ -6741,8 +6741,9 @@ static int notify_sta_listeners(wifi_interface_info_t *interface, wifi_associate
     wifi_device_callbacks_t *callbacks;
     wifi_vap_info_t *vap = &interface->vap_info;
 
-    wifi_hal_dbg_print("%s:%d: Notifying STA listeners for %s on VAP index %d\n", __func__,
-        __LINE__, to_mac_str(associated_dev->cli_MACAddress, sta_mac_str), vap->vap_index);
+    wifi_hal_dbg_print("%s:%d: Notifying STA listeners for %s on VAP index %d, cli_CapableNumSpatialStreams=%u\n",
+        __func__, __LINE__, to_mac_str(associated_dev->cli_MACAddress, sta_mac_str),
+        vap->vap_index, associated_dev->cli_CapableNumSpatialStreams);
 
     callbacks = get_hal_device_callbacks();
     if (callbacks == NULL) {
@@ -7024,6 +7025,10 @@ static int get_sta_handler(struct nl_msg *msg, void *arg)
         wifi_hal_error_print("%s:%d: Client is MLD STA but no link stats available\n", __func__, __LINE__);
     }
 #endif /* HOSTAPD_VERSION >= 211 && CONFIG_IEEE80211BE */
+
+    wifi_hal_dbg_print("%s:%d: cli_CapableNumSpatialStreams=%u for STA %s before notify_sta_listeners\n",
+        __func__, __LINE__, associated_dev.cli_CapableNumSpatialStreams,
+        to_mac_str(associated_dev.cli_MACAddress, sta_mac_str));
 
     notify_sta_listeners(interface, &associated_dev);
 
