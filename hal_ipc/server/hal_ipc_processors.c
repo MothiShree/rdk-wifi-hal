@@ -281,14 +281,13 @@ int ipc_server_output(struct hal_ipc_processor_desc *desc,
             output_array_size = 0;
             wifi_neighbor_ap2_t *tmp_neighbr_ap;
 
-            wifi_neighbor_ap2_t *neighbor_ap_array = NULL;
+            wifi_neighbor_ap2_t *neighbor_ap_array;
 
             desc->ret = wifi_hal_getNeighboringWiFiStatus(index, &neighbor_ap_array, &output_array_size);
             if (desc->ret) {
                 wifi_hal_error_print("%s:%d FAIL call to %s returned %d code\n", __func__, __LINE__, desc->name, desc->ret);
                 cleanup_desc_scratch_buf(desc);
-                if (neighbor_ap_array)
-                    free(neighbor_ap_array);
+                free(neighbor_ap_array);
                 goto error_happened;
             }
 
